@@ -2,158 +2,360 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>占い用 盤面コンパス</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>占い用 精密測定コンパス（真北・磁北並記）</title>
 <style>
+  /* --- 基本スタイル（黒ベース） --- */
   body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f7f7f7;
+    background-color: #000; /* 背景は黒 */
+    color: #fff; /* 文字は白 */
     text-align: center;
-    padding: 20px;
+    padding: 10px;
     margin: 0;
+    overflow: hidden; /* スクロール防止 */
+    user-select: none; /* テキスト選択防止 */
+    -webkit-tap-highlight-color: transparent; /* タップ時のハイライト防止 */
   }
-  .settings {
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
+
+  /* プレイスホルダー（起動前） */
+  #startup-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    z-index: 200;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
   }
-  /* コンパス盤面のデザイン */
-  .compass-wrapper {
+  #startup-overlay h1 { font-size: 20px; margin-bottom: 20px; }
+
+  /* 設定と表示エリア */
+  .header-controls {
     position: relative;
-    width: 280px;
-    height: 280px;
+    z-index: 100;
+    background: rgba(20, 20, 20, 0.8);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+
+  /* 測定地域セレクター */
+  .region-setting { font-size: 12px; margin-bottom: 8px; color: #aaa; }
+  select {
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* 精密表示パネル */
+  #display-panel {
+    display: flex;
+    justify-content: space-around;
+    font-family: 'Courier New', Courier, monospace; /* デジタルっぽいフォント */
+    margin-top: 10px;
+    padding: 5px;
+    border-top: 1px solid #333;
+  }
+  .heading-block { text-align: center; }
+  .heading-label { font-size: 11px; color: #888; }
+  .heading-val { font-size: 24px; font-weight: bold; }
+  .true-val { color: #ff5252; } /* 真方位は赤 */
+  .mag-val { color: #448aff; }  /* 磁方位は青 */
+
+  /* --- コンパス盤面のデザイン --- */
+  .compass-container {
+    position: relative;
+    width: 320px; height: 320px;
     margin: 0 auto;
   }
-  .dial {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 4px solid #333;
-    background: #fff;
+
+  /* スマホ上部を示す固定の中心線（赤） */
+  .center-mark {
+    position: absolute;
+    top: -5px; left: 50%;
+    width: 2px; height: 165px;
+    background: rgba(255, 0, 0, 0.8);
+    transform: translateX(-50%);
+    z-index: 150;
+    pointer-events: none;
+  }
+  .center-mark::after { /* 矢印の先端 */
+    content: '';
+    position: absolute; top: 0; left: 50%;
+    transform: translate(-50%, -100%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 12px solid rgba(255, 0, 0, 0.8);
+  }
+
+  /* 回転するメインの盤面（真北基準） */
+  #main-dial {
+    width: 100%; height: 100%;
     position: absolute;
     top: 0; left: 0;
-    transition: transform 0.1s ease-out; /* スムーズに回転させる */
+    transform-origin: center center;
+    transition: transform 0.05s linear; /* 高速レスポンス */
   }
-  /* 東西南北のラベル */
-  .label { position: absolute; font-weight: bold; font-size: 24px; }
-  .n { top: 10px; left: 50%; transform: translateX(-50%); color: #d32f2f; } /* 真北（赤） */
-  .e { top: 50%; right: 15px; transform: translateY(-50%); }
-  .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
-  .w { top: 50%; left: 15px; transform: translateY(-50%); }
-  
-  /* 磁北のマーク（青） */
-  .mag-n {
+
+  /* ============================== */
+  /* 外側：真北ダイヤル（白・細目盛り） */
+  /* ============================== */
+  .outer-ring {
+    width: 100%; height: 100%;
     position: absolute;
-    top: 15px;
-    left: 50%;
-    font-size: 16px;
-    color: #1976d2;
-    /* 名古屋の西偏約7.5度を初期値として左にズラす */
-    transform: translateX(-50%) rotate(-7.5deg);
-    transform-origin: 50% 125px; /* 回転の軸を円の中心に設定 */
+    border-radius: 50%;
+    background-color: #111;
+    border: 2px solid #555;
+    box-sizing: border-box;
   }
 
-  /* スマホの向いている方向を示す中心の線 */
+  /* 真方位の主要ラベル */
+  .label-true { position: absolute; font-weight: bold; color: #fff; z-index: 50;}
+  .label-true.n { top: 12px; left: 50%; transform: translateX(-50%); color: #ff5252; font-size: 28px; }
+  .label-true.e { top: 50%; right: 12px; transform: translateY(-50%); font-size: 24px;}
+  .label-true.s { bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 24px;}
+  .label-true.w { top: 50%; left: 12px; transform: translateY(-50%); font-size: 24px;}
+
+  /* 角度目盛り（1度刻み・CSS生成は重いためSVGを使用） */
+  .marks-svg {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+  }
+
+  /* ============================== */
+  /* 内側：磁北ダイヤル（青・偏角オフセット） */
+  /* ============================== */
+  #inner-ring-offset {
+    width: 72%; height: 72%; /* 内側一回り小さく */
+    position: absolute;
+    top: 14%; left: 14%;
+    border-radius: 50%;
+    background-color: #000;
+    border: 1px solid #333;
+    transform-origin: center center;
+    z-index: 5;
+  }
+
+  /* 磁方位のラベル（青） */
+  .label-mag { position: absolute; font-weight: bold; color: #448aff; z-index: 60;}
+  .label-mag.n { top: 10px; left: 50%; transform: translateX(-50%); font-size: 16px; }
+  .label-mag.e { top: 50%; right: 10px; transform: translateY(-50%); font-size: 14px; }
+  .label-mag.s { bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; }
+  .label-mag.w { top: 50%; left: 10px; transform: translateY(-50%); font-size: 14px; }
+
+  /* 中心点 */
   .center-dot {
-    position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
-    background: #333; border-radius: 50%; transform: translate(-50%, -50%);
-  }
-  .direction-line {
-    position: absolute; top: -20px; left: 50%; width: 4px; height: 160px;
-    background: rgba(255, 0, 0, 0.5); transform: translateX(-50%); z-index: 10;
+    position: absolute; top: 50%; left: 50%;
+    width: 8px; height: 8px;
+    background: #555; border-radius: 50%;
+    transform: translate(-50%, -50%); z-index: 100;
   }
 
-  button {
-    background-color: #4CAF50; color: white; border: none;
-    padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer;
+  /* ボタン */
+  #start-btn {
+    background-color: #ff5252; color: white; border: none;
+    padding: 12px 24px; font-size: 18px; border-radius: 5px; cursor: pointer;
+    font-weight: bold; box-shadow: 0 4px 10px rgba(255,82,82,0.4);
   }
-</button>
 </style>
 </head>
 <body>
 
-  <div class="settings">
-    <button id="start-btn">コンパスを起動する</button>
-    <p style="font-size: 14px; margin-top: 15px;">
-      現在の偏角（西偏）: <input type="number" id="declination" value="7.5" step="0.1" style="width: 60px;"> 度<br>
-      <small>※名古屋周辺は約7.5度です。</small>
-    </p>
+  <div id="startup-overlay">
+    <h1>占い用 精密コンパス</h1>
+    <button id="start-btn">測定開始</button>
+    <p style="font-size: 12px; color: #888; margin-top: 15px;">※iOSの場合、モーションセンサーの許可が必要です</p>
   </div>
 
-  <div class="compass-wrapper">
-    <div class="direction-line"></div>
+  <div class="header-controls">
+    <div class="region-setting">
+      測定地域: 
+      <select id="region-selector">
+        <option value="-9.5">札幌市周辺 (~西偏9.5°)</option>
+        <option value="-8.8">仙台市周辺 (~西偏8.8°)</option>
+        <option value="-7.9">東京都周辺 (~西偏7.9°)</option>
+        <option value="-7.8" selected>名古屋・伊賀周辺 (~西偏7.8°)</option>
+        <option value="-7.6">大阪市周辺 (~西偏7.6°)</option>
+        <option value="-7.4">広島市周辺 (~西偏7.4°)</option>
+        <option value="-7.3">福岡市周辺 (~西偏7.3°)</option>
+        <option value="-5.5">那覇市周辺 (~西偏5.5°)</option>
+      </select>
+    </div>
+
+    <div id="display-panel">
+      <div class="heading-block">
+        <div class="heading-label">真方位</div>
+        <div class="heading-val true-val" id="true-heading-display">---.-°</div>
+      </div>
+      <div class="heading-block">
+        <div class="heading-label">磁方位</div>
+        <div class="heading-val mag-val" id="mag-heading-display">---.-°</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="compass-container">
+    <div class="center-mark"></div>
     <div class="center-dot"></div>
     
-    <div class="dial" id="dial">
-      <div class="label n">真北</div>
-      <div class="label e">東</div>
-      <div class="label s">南</div>
-      <div class="label w">西</div>
-      <div class="mag-n" id="mag-n">磁北</div>
+    <div id="main-dial">
+      
+      <div class="outer-ring">
+        <div class="label-true n">真北</div>
+        <div class="label-true e">東</div>
+        <div class="label-true s">南</div>
+        <div class="label-true w">西</div>
+        
+        <svg class="marks-svg" viewBox="0 0 320 320" id="marks-svg-content"></svg>
+      </div>
+
+      <div id="inner-ring-offset">
+        <div class="label-mag n">磁北</div>
+        <div class="label-mag e">磁東</div>
+        <div class="label-mag s">磁南</div>
+        <div class="label-mag w">磁西</div>
+      </div>
+
     </div>
   </div>
 
   <script>
     const startBtn = document.getElementById('start-btn');
-    const dial = document.getElementById('dial');
-    const magN = document.getElementById('mag-n');
-    const declinationInput = document.getElementById('declination');
+    const overlay = document.getElementById('startup-overlay');
+    const mainDial = document.getElementById('main-dial');
+    const innerRing = document.getElementById('inner-ring-offset');
+    const regionSelector = document.getElementById('region-selector');
+    const trueDisplay = document.getElementById('true-heading-display');
+    const magDisplay = document.getElementById('mag-heading-display');
 
-    // 偏角の設定が変更されたら磁北の表示位置をアップデート
-    declinationInput.addEventListener('change', (e) => {
-        const decl = parseFloat(e.target.value) || 0;
-        magN.style.transform = `translateX(-50%) rotate(-${decl}deg)`;
+    // --- インフラ：目盛りSVGの動的生成 ---
+    (function generateCompassMarks() {
+      const svg = document.getElementById('marks-svg-content');
+      const cx = 160, cy = 160, r = 155; // 中心点と半径
+      let html = '';
+
+      for (let i = 0; i < 360; i++) {
+        const angleRad = (i - 90) * (Math.PI / 180); // 0度を真上にする
+        
+        let x1, y1, x2, y2, strokeWidth, strokeColor;
+
+        if (i % 10 === 0) { // 10度ごとの長い目盛り
+          x1 = cx + (r - 12) * Math.cos(angleRad);
+          y1 = cy + (r - 12) * Math.sin(angleRad);
+          strokeWidth = 1.5;
+          strokeColor = "#888";
+          
+          // 10度ごとの数字
+          if (i % 30 === 0 && i !== 0) { // 30度ごと、0度はNがあるので避ける
+             const tx = cx + (r - 28) * Math.cos(angleRad);
+             const ty = cy + (r - 28) * Math.sin(angleRad);
+             html += `<text x="${tx}" y="${ty}" text-anchor="middle" dy="4" font-size="10" fill="#666" font-weight="bold" transform="rotate(${i+90} ${tx},${ty})">${i}</text>`;
+          }
+
+        } else if (i % 5 === 0) { // 5度ごとの中目盛り
+          x1 = cx + (r - 8) * Math.cos(angleRad);
+          y1 = cy + (r - 8) * Math.sin(angleRad);
+          strokeWidth = 1;
+          strokeColor = "#555";
+        } else { // 1度ごとの短目盛り
+          x1 = cx + (r - 5) * Math.cos(angleRad);
+          y1 = cy + (r - 5) * Math.sin(angleRad);
+          strokeWidth = 0.5;
+          strokeColor = "#333";
+        }
+        
+        x2 = cx + r * Math.cos(angleRad);
+        y2 = cy + r * Math.sin(angleRad);
+        
+        html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+      }
+      svg.innerHTML = html;
+    })();
+
+    // --- 初期偏角の設定 ---
+    let currentDeclination = parseFloat(regionSelector.value);
+    
+    // 内側の磁方位盤を初期オフセット
+    // ※西偏（マイナス）なので、真方位盤に対して右（プラス）に回すことで磁北を西にズラす
+    innerRing.style.transform = `rotate(${-currentDeclination}deg)`; 
+
+    // 地域変更時の処理
+    regionSelector.addEventListener('change', (e) => {
+      currentDeclination = parseFloat(e.target.value);
+      innerRing.style.transform = `rotate(${-currentDeclination}deg)`;
     });
 
-    // コンパス起動ボタン（iOS 13以降はユーザーの許可が必須なため）
+    // --- センサー起動と処理 ---
     startBtn.addEventListener('click', () => {
       // iOS向けの許可リクエスト
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
           .then(permissionState => {
             if (permissionState === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation);
-              startBtn.textContent = '取得中...';
+              activateCompass();
             } else {
-              alert('センサーへのアクセスが拒否されました。設定を確認してください。');
+              alert('センサーへのアクセスが拒否されました。設定アプリからブラウザのアクセス許可を確認してください。');
             }
           })
           .catch(console.error);
       } else {
         // Android等の場合
-        window.addEventListener('deviceorientationabsolute', handleOrientation);
-        window.addEventListener('deviceorientation', handleOrientation);
-        startBtn.textContent = '取得中...';
+        activateCompass();
       }
     });
 
-    // センサーの値を処理する関数
-    function handleOrientation(event) {
-      let heading = null;
+    function activateCompass() {
+      // プレイスホルダーを消す
+      overlay.style.display = 'none';
 
-      // iOS (webkitCompassHeading) は磁北を基準とした角度を返す
+      // センサーイベント登録
+      if ('ondeviceorientationabsolute' in window) {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+      } else if ('ondeviceorientation' in window) {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      } else {
+        alert('このデバイスはコンパスセンサーに対応していません。');
+      }
+    }
+
+    function handleOrientation(event) {
+      let compassHeading = null;
+
+      // iOS (webkitCompassHeading) は磁北を基準とした角度(0-360)を返す
       if (event.webkitCompassHeading !== undefined) {
-        heading = event.webkitCompassHeading;
+        compassHeading = event.webkitCompassHeading;
       } 
       // Android
       else if (event.alpha !== null) {
-        // Androidは機種によって挙動が違うことが多いですが、一般的な計算式
-        if (event.absolute || event.webkitCompassHeading === undefined) {
-           heading = 360 - event.alpha;
-        }
+        compassHeading = 360 - event.alpha;
       }
 
-      if (heading !== null) {
-        // 偏角（磁北と真北のズレ）を取得
-        const declination = parseFloat(declinationInput.value) || 0;
-        
-        // 真北を基準とした角度を計算（西偏の場合、磁北から偏角分を引く）
-        const trueHeading = heading - declination;
+      if (compassHeading !== null) {
+        // --- 1. 磁方位の確定 ---
+        // センサーから来たそのままの値
+        let magHeading = compassHeading;
+        if(magHeading < 0) magHeading += 360;
+        if(magHeading >= 360) magHeading -= 360;
 
-        // スマホの向きに合わせて盤面を逆回転させる
-        dial.style.transform = `rotate(${-trueHeading}deg)`;
+        // --- 2. 真方位の計算 ---
+        // 西偏（マイナス値）を足すことで、磁方位を左（反時計回り）に補正して真北を出す
+        let trueHeading = magHeading + currentDeclination; 
+        
+        // 0-360度の範囲に補正
+        if(trueHeading < 0) trueHeading += 360;
+        if(trueHeading >= 360) trueHeading -= 360;
+
+        // --- 3. 画面のアップデート ---
+        
+        // メイン盤面（真方位基準）をスマホの向きに合わせて逆回転させる
+        mainDial.style.transform = `rotate(${-trueHeading}deg)`;
+
+        // デジタル表示
+        trueDisplay.textContent = trueHeading.toFixed(1) + '°';
+        magDisplay.textContent = magHeading.toFixed(1) + '°';
       }
     }
   </script>
