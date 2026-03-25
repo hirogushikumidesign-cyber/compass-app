@@ -11,11 +11,21 @@
     background-color: #000;
     color: #fff;
     text-align: center;
-    padding: 10px;
+    padding: 0;
     margin: 0;
     overflow: hidden;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 全体のレイアウト構成 */
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* 画面全体の高さを使う */
+    justify-content: space-between; /* セクション間を広げる */
+    padding: 10px;
+    box-sizing: border-box;
   }
 
   /* プレイスホルダー（起動前） */
@@ -32,41 +42,64 @@
     font-weight: bold; box-shadow: 0 4px 10px rgba(255,82,82,0.4);
   }
 
-  /* 設定と表示エリア */
-  .header-controls {
-    position: relative; z-index: 100;
-    background: rgba(20, 20, 20, 0.8);
-    padding: 10px; border-radius: 8px; margin-bottom: 15px;
+  /* セクションラベル */
+  .section-label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff5252;
+    margin-bottom: 5px;
+    text-align: center;
   }
-  .region-setting { font-size: 12px; margin-bottom: 8px; color: #aaa; }
+
+  /* 上部エリア（測定地域） */
+  .header-controls {
+    flex: 0 0 auto; /* このエリアの高さは内容に合わせる */
+    background: rgba(20, 20, 20, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .region-setting { font-size: 12px; margin-bottom: 10px; color: #aaa; }
   select {
     padding: 5px 10px; background-color: #333; color: #fff;
     border: 1px solid #555; border-radius: 4px; font-size: 14px;
+    width: 100%; /* 横幅いっぱいに */
+    box-sizing: border-box;
   }
 
   /* 精密表示パネル */
   #display-panel {
     display: flex; justify-content: space-around;
     font-family: 'Courier New', Courier, monospace;
-    margin-top: 10px; padding: 5px; border-top: 1px solid #333;
+    padding: 5px; border-top: 1px solid #333;
   }
   .heading-block { text-align: center; }
   .heading-label { font-size: 11px; color: #888; }
-  .heading-val { font-size: 24px; font-weight: bold; }
+  .heading-val { font-size: 28px; font-weight: bold; }
   .true-val { color: #ff5252; } /* 真方位は赤 */
   .mag-val { color: #448aff; }  /* 磁方位は青 */
+
+  /* 中央エリアと下部エリア（コンパス） */
+  .compass-section {
+    flex: 1 1 auto; /* 残りの高さをこのエリアで使う */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 中央に配置 */
+    margin-bottom: 10px;
+  }
 
   /* --- コンパス盤面のデザイン --- */
   .compass-container {
     position: relative;
-    width: 340px; height: 340px;
-    margin: 0 auto;
+    width: 340px; height: 340px; /* 画像のサイズ感に合わせる */
+    margin: 10px 0; /* ラベルとの間隔 */
   }
 
-  /* スマホ上部を示す固定の中心線（赤） */
+  /* スマホ上部を示す固定の中心線（赤い矢印） */
   .center-mark {
-    position: absolute; top: -5px; left: 50%;
-    width: 2px; height: 175px;
+    position: absolute; top: 0px; left: 50%;
+    width: 2px; height: 175px; /* コンパスの中央まで */
     background: rgba(255, 0, 0, 0.8);
     transform: translateX(-50%); z-index: 150;
   }
@@ -128,52 +161,60 @@
     <button id="start-btn">測定開始</button>
   </div>
 
-  <div class="header-controls">
-    <div class="region-setting">
-      測定地域: 
-      <select id="region-selector">
-        <option value="-9.5">札幌市周辺 (~西偏9.5°)</option>
-        <option value="-8.8">仙台市周辺 (~西偏8.8°)</option>
-        <option value="-7.9">東京都周辺 (~西偏7.9°)</option>
-        <option value="-7.8" selected>名古屋・伊賀周辺 (~西偏7.8°)</option>
-        <option value="-7.6">大阪市周辺 (~西偏7.6°)</option>
-        <option value="-7.4">広島市周辺 (~西偏7.4°)</option>
-        <option value="-7.3">福岡市周辺 (~西偏7.3°)</option>
-        <option value="-5.5">那覇市周辺 (~西偏5.5°)</option>
-      </select>
+  <div class="main-content">
+    <div class="header-controls">
+      <div class="section-label">測定地域</div>
+      <div class="region-setting">
+        <select id="region-selector">
+          <option value="-9.5">札幌市周辺 (~西偏9.5°)</option>
+          <option value="-8.8">仙台市周辺 (~西偏8.8°)</option>
+          <option value="-7.9">東京都周辺 (~西偏7.9°)</option>
+          <option value="-7.8" selected>名古屋・伊賀周辺 (~西偏7.8°)</option>
+          <option value="-7.6">大阪市周辺 (~西偏7.6°)</option>
+          <option value="-7.4">広島市周辺 (~西偏7.4°)</option>
+          <option value="-7.3">福岡市周辺 (~西偏7.3°)</option>
+          <option value="-5.5">那覇市周辺 (~西偏5.5°)</option>
+        </select>
+      </div>
+      <div id="display-panel">
+        <div class="heading-block">
+          <div class="heading-label">真方位</div>
+          <div class="heading-val true-val" id="true-heading-display">---.-°</div>
+        </div>
+        <div class="heading-block">
+          <div class="heading-label">磁方位</div>
+          <div class="heading-val mag-val" id="mag-heading-display">---.-°</div>
+        </div>
+      </div>
     </div>
-    <div id="display-panel">
-      <div class="heading-block">
-        <div class="heading-label">真方位</div>
-        <div class="heading-val true-val" id="true-heading-display">---.-°</div>
-      </div>
-      <div class="heading-block">
-        <div class="heading-label">磁方位</div>
-        <div class="heading-val mag-val" id="mag-heading-display">---.-°</div>
-      </div>
-    </div>
-  </div>
 
-  <div class="compass-container">
-    <div class="center-mark"></div>
-    <div class="center-dot"></div>
-    
-    <div id="main-dial">
-      <div class="outer-ring">
-        <div class="label-true n">真北</div>
-        <div class="label-true e">真東</div>
-        <div class="label-true s">真南</div>
-        <div class="label-true w">真西</div>
-        <svg class="svg-layer" viewBox="0 0 340 340" id="outer-svg"></svg>
-      </div>
+    <div class="compass-section">
+      <div class="section-label">方位</div>
+      
+      <div class="compass-container">
+        <div class="center-mark"></div>
+        <div class="center-dot"></div>
+        
+        <div id="main-dial">
+          <div class="outer-ring">
+            <div class="label-true n">真北</div>
+            <div class="label-true e">真東</div>
+            <div class="label-true s">真南</div>
+            <div class="label-true w">真西</div>
+            <svg class="svg-layer" viewBox="0 0 340 340" id="outer-svg"></svg>
+          </div>
 
-      <div id="inner-ring">
-        <div class="label-mag n">磁北</div>
-        <div class="label-mag e">磁東</div>
-        <div class="label-mag s">磁南</div>
-        <div class="label-mag w">磁西</div>
-        <svg class="svg-layer" viewBox="0 0 340 340" id="inner-svg" style="width: 100%; height: 100%; position: absolute; top:0; left:0;"></svg>
+          <div id="inner-ring">
+            <div class="label-mag n">磁北</div>
+            <div class="label-mag e">磁東</div>
+            <div class="label-mag s">磁南</div>
+            <div class="label-mag w">磁西</div>
+            <svg class="svg-layer" viewBox="0 0 340 340" id="inner-svg" style="width: 100%; height: 100%; position: absolute; top:0; left:0;"></svg>
+          </div>
+        </div>
       </div>
+      
+      <div class="section-label">コンパス</div>
     </div>
   </div>
 
