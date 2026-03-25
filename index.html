@@ -23,7 +23,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh; /* 画面全体の高さを使う */
-    justify-content: space-between; /* セクション間を広げる */
+    justify-content: space-between;
     padding: 10px;
     box-sizing: border-box;
   }
@@ -53,7 +53,7 @@
 
   /* 上部エリア（測定地域） */
   .header-controls {
-    flex: 0 0 auto; /* このエリアの高さは内容に合わせる */
+    flex: 0 0 auto;
     background: rgba(20, 20, 20, 0.8);
     padding: 15px;
     border-radius: 8px;
@@ -63,7 +63,7 @@
   select {
     padding: 5px 10px; background-color: #333; color: #fff;
     border: 1px solid #555; border-radius: 4px; font-size: 14px;
-    width: 100%; /* 横幅いっぱいに */
+    width: 100%;
     box-sizing: border-box;
   }
 
@@ -79,27 +79,27 @@
   .true-val { color: #ff5252; } /* 真方位は赤 */
   .mag-val { color: #448aff; }  /* 磁方位は青 */
 
-  /* 中央エリアと下部エリア（コンパス） */
+  /* 中央エリア（方位とコンパス） */
   .compass-section {
-    flex: 1 1 auto; /* 残りの高さをこのエリアで使う */
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* 中央に配置 */
-    margin-bottom: 10px;
+    justify-content: center;
+    padding-bottom: 30px; /* ★ここに追加：下部に余白を作って全体を約7mm上に押し上げる★ */
   }
 
   /* --- コンパス盤面のデザイン --- */
   .compass-container {
     position: relative;
-    width: 340px; height: 340px; /* 画像のサイズ感に合わせる */
-    margin: 10px 0; /* ラベルとの間隔 */
+    width: 340px; height: 340px;
+    margin: 10px 0 0 0; /* 下のmarginを消して上に詰める */
   }
 
   /* スマホ上部を示す固定の中心線（赤い矢印） */
   .center-mark {
     position: absolute; top: 0px; left: 50%;
-    width: 2px; height: 175px; /* コンパスの中央まで */
+    width: 2px; height: 175px;
     background: rgba(255, 0, 0, 0.8);
     transform: translateX(-50%); z-index: 150;
   }
@@ -124,7 +124,7 @@
   }
 
   /* ============================== */
-  /* 外側：真方位ダイヤル（白目盛り・赤バー・赤文字） */
+  /* 外側：真方位ダイヤル */
   /* ============================== */
   .outer-ring {
     width: 100%; height: 100%; position: absolute;
@@ -138,10 +138,10 @@
   .svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
 
   /* ============================== */
-  /* 内側：磁方位ダイヤル（青バー・青文字） */
+  /* 内側：磁方位ダイヤル */
   /* ============================== */
   #inner-ring {
-    width: 66%; height: 66%; /* 外側より二回り小さく */
+    width: 66%; height: 66%;
     position: absolute; top: 17%; left: 17%;
     border-radius: 50%; background-color: rgba(20,20,20,0.5);
     border: 1px solid #333;
@@ -213,9 +213,7 @@
           </div>
         </div>
       </div>
-      
-      <div class="section-label">コンパス</div>
-    </div>
+      </div>
   </div>
 
   <script>
@@ -227,7 +225,6 @@
     const trueDisplay = document.getElementById('true-heading-display');
     const magDisplay = document.getElementById('mag-heading-display');
 
-    // --- 外側（真方位）の目盛り生成 ---
     function generateOuterMarks() {
       const svg = document.getElementById('outer-svg');
       const cx = 170, cy = 170, r = 165;
@@ -236,15 +233,14 @@
         const angleRad = (i - 90) * (Math.PI / 180);
         let x1, y1, strokeWidth, strokeColor;
 
-        if (i % 90 === 0) { // 東西南北の強調赤バー
+        if (i % 90 === 0) {
           x1 = cx + (r - 20) * Math.cos(angleRad);
           y1 = cy + (r - 20) * Math.sin(angleRad);
           strokeWidth = 3; strokeColor = "#ff5252";
-        } else if (i % 10 === 0) { // 10度ごと
+        } else if (i % 10 === 0) {
           x1 = cx + (r - 12) * Math.cos(angleRad);
           y1 = cy + (r - 12) * Math.sin(angleRad);
           strokeWidth = 1.5; strokeColor = "#888";
-          // 10度ごとの数字
           if (i % 30 === 0 && i % 90 !== 0) {
              const tx = cx + (r - 28) * Math.cos(angleRad);
              const ty = cy + (r - 28) * Math.sin(angleRad);
@@ -266,17 +262,15 @@
       svg.innerHTML = html;
     }
 
-    // --- 内側（磁方位）の目盛り生成 ---
     function generateInnerMarks() {
       const svg = document.getElementById('inner-svg');
-      // 内側SVGのビューボックスは親divに合わせて340x340で描画するが、表示上は縮小されるので相対的に描く
       const cx = 170, cy = 170, r = 165; 
       let html = '';
-      for (let i = 0; i < 360; i+=5) { // 内側は5度刻みですっきりさせる
+      for (let i = 0; i < 360; i+=5) {
         const angleRad = (i - 90) * (Math.PI / 180);
         let x1, y1, strokeWidth, strokeColor;
 
-        if (i % 90 === 0) { // 東西南北の強調青バー
+        if (i % 90 === 0) {
           x1 = cx + (r - 25) * Math.cos(angleRad);
           y1 = cy + (r - 25) * Math.sin(angleRad);
           strokeWidth = 4; strokeColor = "#448aff";
@@ -299,9 +293,7 @@
     generateOuterMarks();
     generateInnerMarks();
 
-    // --- 偏角のセット（★ズレの方向を修正★） ---
-    let currentDeclination = parseFloat(regionSelector.value); // 例: -7.8
-    // 西偏（マイナス）の場合、内側の磁方位盤を左（反時計回り）にズラすのが正解なので、そのままの値をrotateに渡す
+    let currentDeclination = parseFloat(regionSelector.value);
     innerRing.style.transform = `rotate(${currentDeclination}deg)`;
 
     regionSelector.addEventListener('change', (e) => {
@@ -309,7 +301,6 @@
       innerRing.style.transform = `rotate(${currentDeclination}deg)`;
     });
 
-    // --- センサー起動と処理 ---
     startBtn.addEventListener('click', () => {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
@@ -342,14 +333,11 @@
         if(magHeading < 0) magHeading += 360;
         if(magHeading >= 360) magHeading -= 360;
 
-        // 真方位 = 磁方位 + 偏角(西偏はマイナス)
         let trueHeading = magHeading + currentDeclination; 
         if(trueHeading < 0) trueHeading += 360;
         if(trueHeading >= 360) trueHeading -= 360;
 
-        // メイン盤面（外側・真方位基準）を逆回転
         mainDial.style.transform = `rotate(${-trueHeading}deg)`;
-
         trueDisplay.textContent = trueHeading.toFixed(1) + '°';
         magDisplay.textContent = magHeading.toFixed(1) + '°';
       }
