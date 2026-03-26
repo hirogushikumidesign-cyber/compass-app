@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>占い用 精密測定コンパス（真北・磁北二重ダイヤル）</title>
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" href="icon.png">
 <style>
   /* --- 基本スタイル --- */
   body {
@@ -20,21 +18,15 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* 全体のレイアウト構成 */
   .main-content {
-    display: flex;
-    flex-direction: column;
-    height: 100vh; /* 画面全体の高さを使う */
-    justify-content: space-between;
-    padding: 10px;
-    box-sizing: border-box;
+    display: flex; flex-direction: column; height: 100vh;
+    justify-content: space-between; padding: 10px; box-sizing: border-box;
   }
 
   /* プレイスホルダー（起動前） */
   #startup-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.9);
-    z-index: 200;
+    background-color: rgba(0,0,0,0.9); z-index: 200;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
   }
   #startup-overlay h1 { font-size: 20px; margin-bottom: 20px; }
@@ -45,28 +37,18 @@
   }
 
   /* セクションラベル */
-  .section-label {
-    font-size: 16px;
-    font-weight: bold;
-    color: #ff5252;
-    margin-bottom: 5px;
-    text-align: center;
-  }
+  .section-label { font-size: 16px; font-weight: bold; color: #ff5252; margin-bottom: 5px; text-align: center; }
 
   /* 上部エリア（測定地域） */
   .header-controls {
-    flex: 0 0 auto;
-    background: rgba(20, 20, 20, 0.8);
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    flex: 0 0 auto; background: rgba(20, 20, 20, 0.8);
+    padding: 15px; border-radius: 8px; margin-bottom: 10px;
   }
   .region-setting { font-size: 12px; margin-bottom: 10px; color: #aaa; }
   select {
     padding: 5px 10px; background-color: #333; color: #fff;
     border: 1px solid #555; border-radius: 4px; font-size: 14px;
-    width: 100%;
-    box-sizing: border-box;
+    width: 100%; box-sizing: border-box;
   }
 
   /* 精密表示パネル */
@@ -78,32 +60,24 @@
   .heading-block { text-align: center; }
   .heading-label { font-size: 11px; color: #888; }
   .heading-val { font-size: 28px; font-weight: bold; }
-  .true-val { color: #ff5252; } /* 真方位は赤 */
-  .mag-val { color: #448aff; }  /* 磁方位は青 */
+  .true-val { color: #ff5252; } 
+  .mag-val { color: #448aff; }  
 
   /* 中央エリア（方位とコンパス） */
   .compass-section {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding-bottom: 100px; /* ★ここに追加：下部に余白を作って全体を約7mm上に押し上げる★ */
+    flex: 1 1 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding-bottom: 30px; 
   }
 
   /* --- コンパス盤面のデザイン --- */
   .compass-container {
-    position: relative;
-    width: 340px; height: 340px;
-    margin: 10px 0 0 0; /* 下のmarginを消して上に詰める */
+    position: relative; width: 340px; height: 340px; margin: 10px 0 0 0; 
   }
 
-  /* スマホ上部を示す固定の中心線（赤い矢印） */
   .center-mark {
-    position: absolute; top: 0px; left: 50%;
-    width: 2px; height: 175px;
-    background: rgba(255, 0, 0, 0.8);
-    transform: translateX(-50%); z-index: 150;
+    position: absolute; top: 0px; left: 50%; width: 2px; height: 175px;
+    background: rgba(255, 0, 0, 0.8); transform: translateX(-50%); z-index: 150;
   }
   .center-mark::after {
     content: ''; position: absolute; top: 0; left: 50%;
@@ -117,17 +91,13 @@
     transform: translate(-50%, -50%); z-index: 160;
   }
 
-  /* 回転するメイン盤面（真方位基準） */
+  /* ★JSで滑らかに動かすため、ここにあった transition を削除しました */
   #main-dial {
     width: 100%; height: 100%;
     position: absolute; top: 0; left: 0;
     transform-origin: center center;
-    transition: transform 0.05s linear;
   }
 
-  /* ============================== */
-  /* 外側：真方位ダイヤル */
-  /* ============================== */
   .outer-ring {
     width: 100%; height: 100%; position: absolute;
     border-radius: 50%; border: 2px solid #555; box-sizing: border-box;
@@ -139,15 +109,11 @@
   .label-true.w { top: 50%; left: 15px; transform: translateY(-50%); font-size: 20px; }
   .svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
 
-  /* ============================== */
-  /* 内側：磁方位ダイヤル */
-  /* ============================== */
   #inner-ring {
     width: 66%; height: 66%;
     position: absolute; top: 17%; left: 17%;
     border-radius: 50%; background-color: rgba(20,20,20,0.5);
-    border: 1px solid #333;
-    transform-origin: center center; z-index: 20;
+    border: 1px solid #333; transform-origin: center center; z-index: 20;
   }
   .label-mag { position: absolute; font-weight: bold; color: #448aff; z-index: 60; }
   .label-mag.n { top: 15px; left: 50%; transform: translateX(-50%); font-size: 18px; }
@@ -192,7 +158,6 @@
 
     <div class="compass-section">
       <div class="section-label">方位</div>
-      
       <div class="compass-container">
         <div class="center-mark"></div>
         <div class="center-dot"></div>
@@ -215,7 +180,7 @@
           </div>
         </div>
       </div>
-      </div>
+    </div>
   </div>
 
   <script>
@@ -227,6 +192,7 @@
     const trueDisplay = document.getElementById('true-heading-display');
     const magDisplay = document.getElementById('mag-heading-display');
 
+    // 目盛り生成
     function generateOuterMarks() {
       const svg = document.getElementById('outer-svg');
       const cx = 170, cy = 170, r = 165;
@@ -234,31 +200,24 @@
       for (let i = 0; i < 360; i++) {
         const angleRad = (i - 90) * (Math.PI / 180);
         let x1, y1, strokeWidth, strokeColor;
-
         if (i % 90 === 0) {
-          x1 = cx + (r - 20) * Math.cos(angleRad);
-          y1 = cy + (r - 20) * Math.sin(angleRad);
+          x1 = cx + (r - 20) * Math.cos(angleRad); y1 = cy + (r - 20) * Math.sin(angleRad);
           strokeWidth = 3; strokeColor = "#ff5252";
         } else if (i % 10 === 0) {
-          x1 = cx + (r - 12) * Math.cos(angleRad);
-          y1 = cy + (r - 12) * Math.sin(angleRad);
+          x1 = cx + (r - 12) * Math.cos(angleRad); y1 = cy + (r - 12) * Math.sin(angleRad);
           strokeWidth = 1.5; strokeColor = "#888";
           if (i % 30 === 0 && i % 90 !== 0) {
-             const tx = cx + (r - 28) * Math.cos(angleRad);
-             const ty = cy + (r - 28) * Math.sin(angleRad);
+             const tx = cx + (r - 28) * Math.cos(angleRad); const ty = cy + (r - 28) * Math.sin(angleRad);
              html += `<text x="${tx}" y="${ty}" text-anchor="middle" dy="4" font-size="10" fill="#666" font-weight="bold" transform="rotate(${i+90} ${tx},${ty})">${i}</text>`;
           }
         } else if (i % 5 === 0) {
-          x1 = cx + (r - 8) * Math.cos(angleRad);
-          y1 = cy + (r - 8) * Math.sin(angleRad);
+          x1 = cx + (r - 8) * Math.cos(angleRad); y1 = cy + (r - 8) * Math.sin(angleRad);
           strokeWidth = 1; strokeColor = "#555";
         } else {
-          x1 = cx + (r - 5) * Math.cos(angleRad);
-          y1 = cy + (r - 5) * Math.sin(angleRad);
+          x1 = cx + (r - 5) * Math.cos(angleRad); y1 = cy + (r - 5) * Math.sin(angleRad);
           strokeWidth = 0.5; strokeColor = "#333";
         }
-        const x2 = cx + r * Math.cos(angleRad);
-        const y2 = cy + r * Math.sin(angleRad);
+        const x2 = cx + r * Math.cos(angleRad); const y2 = cy + r * Math.sin(angleRad);
         html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
       }
       svg.innerHTML = html;
@@ -271,22 +230,17 @@
       for (let i = 0; i < 360; i+=5) {
         const angleRad = (i - 90) * (Math.PI / 180);
         let x1, y1, strokeWidth, strokeColor;
-
         if (i % 90 === 0) {
-          x1 = cx + (r - 25) * Math.cos(angleRad);
-          y1 = cy + (r - 25) * Math.sin(angleRad);
+          x1 = cx + (r - 25) * Math.cos(angleRad); y1 = cy + (r - 25) * Math.sin(angleRad);
           strokeWidth = 4; strokeColor = "#448aff";
         } else if (i % 10 === 0) {
-          x1 = cx + (r - 10) * Math.cos(angleRad);
-          y1 = cy + (r - 10) * Math.sin(angleRad);
+          x1 = cx + (r - 10) * Math.cos(angleRad); y1 = cy + (r - 10) * Math.sin(angleRad);
           strokeWidth = 1.5; strokeColor = "#555";
         } else {
-          x1 = cx + (r - 5) * Math.cos(angleRad);
-          y1 = cy + (r - 5) * Math.sin(angleRad);
+          x1 = cx + (r - 5) * Math.cos(angleRad); y1 = cy + (r - 5) * Math.sin(angleRad);
           strokeWidth = 1; strokeColor = "#333";
         }
-        const x2 = cx + r * Math.cos(angleRad);
-        const y2 = cy + r * Math.sin(angleRad);
+        const x2 = cx + r * Math.cos(angleRad); const y2 = cy + r * Math.sin(angleRad);
         html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
       }
       svg.innerHTML = html;
@@ -303,6 +257,11 @@
       innerRing.style.transform = `rotate(${currentDeclination}deg)`;
     });
 
+    // ★追加：アニメーション用の変数
+    let currentAngle = 0; // 現在描画されている角度
+    let targetAngle = 0;  // センサーから取得した最新の目標角度
+    let isCompassActive = false;
+
     startBtn.addEventListener('click', () => {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
@@ -318,13 +277,17 @@
 
     function activateCompass() {
       overlay.style.display = 'none';
+      isCompassActive = true;
       if ('ondeviceorientationabsolute' in window) {
         window.addEventListener('deviceorientationabsolute', handleOrientation, true);
       } else if ('ondeviceorientation' in window) {
         window.addEventListener('deviceorientation', handleOrientation, true);
       }
+      // ★追加：アニメーションループの開始
+      requestAnimationFrame(updateCompass);
     }
 
+    // センサーデータの取得（目標角度の更新のみ行う）
     function handleOrientation(event) {
       let compassHeading = null;
       if (event.webkitCompassHeading !== undefined) compassHeading = event.webkitCompassHeading;
@@ -339,10 +302,45 @@
         if(trueHeading < 0) trueHeading += 360;
         if(trueHeading >= 360) trueHeading -= 360;
 
-        mainDial.style.transform = `rotate(${-trueHeading}deg)`;
-        trueDisplay.textContent = trueHeading.toFixed(1) + '°';
-        magDisplay.textContent = magHeading.toFixed(1) + '°';
+        // 描画用の目標角度を更新
+        targetAngle = trueHeading;
       }
+    }
+
+    // ★追加：毎フレームの描画処理（ヌルヌル動かす＆スナップ）
+    function updateCompass() {
+      if (!isCompassActive) return;
+
+      // 0度と360度の境界をまたぐ時の最短距離を計算
+      let diff = targetAngle - currentAngle;
+      diff = ((diff + 180) % 360 + 360) % 360 - 180;
+
+      // ローパスフィルター（0.1 の係数で滑らかに追従。数字を小さくするとより遅れて滑らかになる）
+      currentAngle += diff * 0.1;
+      currentAngle = (currentAngle + 360) % 360;
+
+      // 描画用の角度を変数に格納
+      let displayTrueHeading = currentAngle;
+      
+      // 【スナップ機能】真方位が ±1.0度 以内なら 0度にピタッと吸い付かせる
+      if (displayTrueHeading > 359.0 || displayTrueHeading < 1.0) {
+        displayTrueHeading = 0;
+      }
+
+      // 描画用の磁方位を逆算
+      let displayMagHeading = displayTrueHeading - currentDeclination;
+      if(displayMagHeading < 0) displayMagHeading += 360;
+      if(displayMagHeading >= 360) displayMagHeading -= 360;
+
+      // 盤面の回転を適用
+      mainDial.style.transform = `rotate(${-displayTrueHeading}deg)`;
+      
+      // デジタル表示を更新
+      trueDisplay.textContent = displayTrueHeading.toFixed(1) + '°';
+      magDisplay.textContent = displayMagHeading.toFixed(1) + '°';
+
+      // 次のフレームを要求（ループ）
+      requestAnimationFrame(updateCompass);
     }
   </script>
 </body>
